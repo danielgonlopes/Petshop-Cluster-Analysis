@@ -1,0 +1,105 @@
+---
+title: "Segmentação de Mercado com Cluster Analysis"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+**Por: Daniel Lopes** 
+
+Uma equipe da Marketing utilizou um questionário para coletar dados sobre os clientes de uma grande rede de Petshop. O objetivo é realizar uma **cluster analysis** para identificar segmentos do mercado ao caracterizar grupos de clientes homogêneos.
+
+Itens do questionário:
+
+1. Qual a sua idade?
+2. Qual o seu sexo? (0 - mulher; 1 - homem)
+3. É dono de um cão? (0 - não; 1 - sim)
+4. É dono de um gato?
+5. É dono de um pássaro?
+6. É dono de um roedor?
+7. É dono de um outro tipo de animal?
+
+Indique o seu grau de concordância com as seguintes afirmações (1 - discordo totalmente; 2 - discordo parcialmente; 3 - não concordo e nem discordo; 4 concordo parcialmente; 5 - concordo totalmente)
+
+8. Sempre compro ração aqui
+9. Meu animal sempre toma banho aqui
+10. Meu animal sempre vai ao veterinário aqui
+11. Gosto de comprar brinquedos para o meu animal
+12. Gosto de comprar plantas aqui
+13. Gosto de utilizar a farmácia veterinária desta loja
+14. Venho a loja somente a passeio
+15. A adoção de animais é muito importante
+16. Gosto de aproveitar e ir ao shopping sempre que venho aqui
+17. Gosto de aproveitar e ir ao supermercado sempre que venho aqui
+18. Faço compras online de produtos para o meu animal
+19. Sempre utilizo os pontos do programa de fidelidade
+
+
+Carregando a base de dados
+
+
+```{r}
+dados <- read.csv2("Dados/dados.csv")
+head(dados)
+```
+
+Normalizando as variáveis.
+
+
+```{r}
+dadosNorm <- scale(dados)
+summary(dadosNorm[,1:10])
+```
+
+
+Calculando a distância entre as variáveis e agrupando os respondentes.
+
+```{r}
+d <- dist(dadosNorm, method = "euclidean")
+w <- hclust(d, method="ward.D") 
+```
+
+Plotando o Dendograma.
+
+```{r}
+plot(w, hang = -1, xlab = "Clientes") # Desenha o dendograma
+abline(h=16, lty=c(2)) # Linha de corte para 2 grupos
+abline(h=13.5, lty=c(2)) # Linha de corte para 3 grupos
+abline(h=11, lty=c(2)) # Linha de corte para 4 grupos
+```
+
+Ao traçar uma linha próxima ao valor 11, é possível notar que existem 4 grupos razoavelmente homogêneos.
+
+```{r message=TRUE, warning=TRUE}
+plot(w, hang = -1, xlab = "Clientes")
+rect.hclust(w, k=4) 
+
+```
+
+
+Calculando a quantidade de clientes por grupo.
+
+
+```{r}
+grupos <- cutree(w, k=4)
+table(grupos) # Mostra a quantidade de respondentes de cada grupo
+```
+
+
+**Cuidado!** Interpretar levando em conta a escala original (idade, dummy e likert de 5 pontos)
+
+```{r}
+resultados <- lapply(split(dados, grupos), colMeans)
+resultados <- data.frame(resultados)
+resultados
+```
+
+O **grupo 1** é formado tanto por homens como por mulheres, próximos aos 40 anos de idade, que no geral têm cães, compram ração na loja e utilizam o programa de fidelidade. Eles têm pouco interesse por plantas, mas aproveitam para ir ao shopping e ao supermercado sempre que vão até a loja.
+
+O **grupo 2** é formado majoritariamente por mulheres que têm cães. Diferente do grupo 1, o grupo 2 não utiliza a loja para comprar ração, mas para levar o cão ao banho. A adoção é uma causa muito importane no ponto de vista delas e elas também utilizam o programa de fidelidade.
+
+O **grupo 3** é formado por mulheres mais velhas que têm gatos.Elas não fazem compras online e têm como o principal objetivo comprar produtos de farmácia para os seus animais. Curiosamente, não gostam de comprar plantas na loja.
+
+O **grupo 4** é formado tanto por homens como por mulheres que tem pássaros e roedores. Eles compram ração e brinquedos para os seus animais e também plantas. Além disso, aproveitam a loja para um passeio. Banhos e o uso do veterinário não são importantes para eles.
+
